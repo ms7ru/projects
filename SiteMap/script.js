@@ -3,7 +3,7 @@ function link(n) {
         'https://ms7ru.github.io/School-Tools',
         'https://ms7ru.github.io/NotePad',
         'https://ms7ru.github.io/clock',
-        'https://ms7ru.github.io/t',
+        'https://ms7ru.github.io/maze',
         'https://ms7ru.github.io/OHIO',
         'https://ms7ru.github.io/NewTab',
         'https://ms7ru.github.io/WIPs-(work-in-progress)'
