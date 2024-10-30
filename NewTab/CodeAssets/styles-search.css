@@ -1,0 +1,20 @@
+#term {
+    width: 99vw;
+    height: 88vh;
+}
+
+body {
+    overflow: hidden;
+}
+
+#row {
+    /* display: flex; */
+    justify-content: left;
+    align-items: left;
+    width: 100vw;
+    font-size: 100%;
+}
+
+img {
+    border: 1px solid #000000;
+}

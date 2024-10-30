@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./CodeAssets/styles-search.css">
+    <link rel="icon" href="./Assets/NewTabFav.svg">
+    <title>Search</title>
+</head>
+<body>
+    <table>
+        <tr id="row">
+            <td><a href="./index.html"><button>Go Back</button></a></td>
+            <td><p>My Web Search!!!</p></td>
+            <td><input id="search" type="text" onkeydown="if(event.key === 'Enter') pressed()"></td>
+            <td><img src="./Assets/Google.svg" onclick="googleSearch()"></td>
+            <td><img src="./Assets/Bing.svg" onclick="bingSearch()"></td>
+        </tr>
+    </table>
+    <iframe id="term" src=""></iframe>
+    <script src="./CodeAssets/script-search.js"></script>
+</body>
+</html>

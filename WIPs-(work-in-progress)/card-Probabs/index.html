@@ -1,0 +1,433 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Hand Probability Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* General styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.card-selection-section {
+    padding: 20px;
+    text-align: center;
+}
+
+.card-slot {
+    display: inline-block;
+    width: 60px;
+    height: 90px;
+    line-height: 90px;
+    font-size: 24px;
+    border: 1px solid #ddd;
+    margin: 5px;
+    background-color: #fff;
+    text-align: center;
+    cursor: pointer;
+}
+
+.card-slot.selected {
+    background-color: #b0e57c; /* Light green for selected cards */
+}
+
+.card-slot.disabled {
+    background-color: #d3d3d3; /* Light grey for disabled cards */
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.selected-cards {
+    margin-top: 20px;
+}
+
+.selected-cards .card-slot {
+    width: 80px;
+    height: 120px;
+    font-size: 28px;
+    line-height: 120px;
+}
+
+.probability-table-section {
+    margin: 30px auto;
+    width: 90%;
+    max-width: 1200px;
+    text-align: center;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 18px;
+    text-align: left;
+}
+
+table th, table td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+}
+
+table th {
+    background-color: #f4f4f4;
+}
+
+table tbody tr:nth-of-type(even) {
+    background-color: #f9f9f9;
+}
+
+table td {
+    text-align: center;
+}
+
+    </style>
+</head>
+<body>
+    <!-- My Cards and Community Cards Section -->
+    <div class="card-selection-section">
+        <h2>Select Your Cards</h2>
+        <div id="my-cards-container"></div>
+        <div class="selected-cards">
+            <div class="card-slot" id="my-card1"></div>
+            <div class="card-slot" id="my-card2"></div>
+        </div>
+        <h2>Select Community Cards</h2>
+        <div id="community-cards-container"></div>
+        <div class="selected-cards">
+            <div class="card-slot" id="community-card1"></div>
+            <div class="card-slot" id="community-card2"></div>
+            <div class="card-slot" id="community-card3"></div>
+            <div class="card-slot" id="community-card4"></div>
+            <div class="card-slot" id="community-card5"></div>
+        </div>
+    </div>
+
+    <!-- Poker Hand Probability Table -->
+    <div class="probability-table-section">
+        <h2>Poker Hand Probabilities</h2>
+        <table id="poker-probability-table">
+            <thead>
+                <tr>
+                    <th>Poker Hand</th>
+                    <th>Probability (%)</th>
+                    <th>Highest Card</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be dynamically generated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    const suits = ['♠', '♥', '♦', '♣'];
+    const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    const myCardsContainer = document.getElementById('my-cards-container');
+    const communityCardsContainer = document.getElementById('community-cards-container');
+    const mySelectedCards = [];
+    const communitySelectedCards = [];
+
+    // Generate the deck for both sections
+    generateDeck(myCardsContainer, selectMyCard);
+    generateDeck(communityCardsContainer, selectCommunityCard);
+
+    function generateDeck(container, onClickHandler) {
+        suits.forEach(suit => {
+            ranks.forEach(rank => {
+                const card = document.createElement('div');
+                card.classList.add('card-slot');
+                card.textContent = `${rank}${suit}`;
+                card.addEventListener('click', () => onClickHandler(card));
+                container.appendChild(card);
+            });
+        });
+    }
+
+    function selectMyCard(card) {
+        if (card.classList.contains('selected')) {
+            card.classList.remove('selected');
+            removeCard(mySelectedCards, card.textContent);
+            updateMyCards();
+            enableCardInCommunity(card.textContent);
+        } else if (mySelectedCards.length < 2 && !communitySelectedCards.includes(card.textContent)) {
+            card.classList.add('selected');
+            mySelectedCards.push(card.textContent);
+            updateMyCards();
+            disableCardInCommunity(card.textContent);
+        }
+    }
+
+    function selectCommunityCard(card) {
+        if (card.classList.contains('selected')) {
+            card.classList.remove('selected');
+            removeCard(communitySelectedCards, card.textContent);
+            updateCommunityCards();
+            enableCardInMyCards(card.textContent);
+        } else if (communitySelectedCards.length < 5 && !mySelectedCards.includes(card.textContent)) {
+            card.classList.add('selected');
+            communitySelectedCards.push(card.textContent);
+            updateCommunityCards();
+            disableCardInMyCards(card.textContent);
+        }
+    }
+
+    function removeCard(selectedCards, cardText) {
+        const index = selectedCards.indexOf(cardText);
+        if (index > -1) {
+            selectedCards.splice(index, 1);
+        }
+    }
+
+    function disableCardInCommunity(cardText) {
+        const communityCards = communityCardsContainer.querySelectorAll('.card-slot');
+        communityCards.forEach(card => {
+            if (card.textContent === cardText) {
+                card.classList.add('disabled');
+                card.removeEventListener('click', selectCommunityCard);
+            }
+        });
+    }
+
+    function enableCardInCommunity(cardText) {
+        const communityCards = communityCardsContainer.querySelectorAll('.card-slot');
+        communityCards.forEach(card => {
+            if (card.textContent === cardText) {
+                card.classList.remove('disabled');
+                card.addEventListener('click', () => selectCommunityCard(card));
+            }
+        });
+    }
+
+    function disableCardInMyCards(cardText) {
+        const myCards = myCardsContainer.querySelectorAll('.card-slot');
+        myCards.forEach(card => {
+            if (card.textContent === cardText) {
+                card.classList.add('disabled');
+                card.removeEventListener('click', selectMyCard);
+            }
+        });
+    }
+
+    function enableCardInMyCards(cardText) {
+        const myCards = myCardsContainer.querySelectorAll('.card-slot');
+        myCards.forEach(card => {
+            if (card.textContent === cardText) {
+                card.classList.remove('disabled');
+                card.addEventListener('click', () => selectMyCard(card));
+            }
+        });
+    }
+
+    function updateMyCards() {
+        document.getElementById('my-card1').textContent = mySelectedCards[0] || '';
+        document.getElementById('my-card2').textContent = mySelectedCards[1] || '';
+        calculateProbabilities();
+    }
+
+    function updateCommunityCards() {
+        document.getElementById('community-card1').textContent = communitySelectedCards[0] || '';
+        document.getElementById('community-card2').textContent = communitySelectedCards[1] || '';
+        document.getElementById('community-card3').textContent = communitySelectedCards[2] || '';
+        document.getElementById('community-card4').textContent = communitySelectedCards[3] || '';
+        document.getElementById('community-card5').textContent = communitySelectedCards[4] || '';
+        calculateProbabilities();
+    }
+
+    function calculateProbabilities() {
+        const allCards = [...mySelectedCards, ...communitySelectedCards];
+        const probabilities = {
+            "High Card": { probability: 0, highCard: null },
+            "Pair": { probability: 0, highCard: null },
+            "Two Pair": { probability: 0, highCard: null },
+            "Three of a Kind": { probability: 0, highCard: null },
+            "Straight": { probability: 0, highCard: null },
+            "Flush": { probability: 0, highCard: null },
+            "Full House": { probability: 0, highCard: null },
+            "Four of a Kind": { probability: 0, highCard: null },
+            "Straight Flush": { probability: 0, highCard: null },
+            "Royal Flush": { probability: 0, highCard: null }
+        };
+
+        // Example calculations for simplicity
+        if (allCards.length >= 5) {
+            // Calculate High Card
+            const highCard = calculateHighCard(allCards);
+            probabilities["High Card"].probability = 100; // Always have a High Card
+            probabilities["High Card"].highCard = highCard;
+
+            // Check for Pair, Two Pair, Three of a Kind, etc.
+            probabilities["Pair"].probability = calculatePairProbability(allCards);
+            probabilities["Two Pair"].probability = calculateTwoPairProbability(allCards);
+            probabilities["Three of a Kind"].probability = calculateThreeOfAKindProbability(allCards);
+            probabilities["Straight"].probability = calculateStraightProbability(allCards);
+            probabilities["Flush"].probability = calculateFlushProbability(allCards);
+            probabilities["Full House"].probability = calculateFullHouseProbability(allCards);
+            probabilities["Four of a Kind"].probability = calculateFourOfAKindProbability(allCards);
+            probabilities["Straight Flush"].probability = calculateStraightFlushProbability(allCards);
+            probabilities["Royal Flush"].probability = calculateRoyalFlushProbability(allCards);
+        }
+
+        populateProbabilityTable(probabilities);
+    }
+
+    function calculateHighCard(cards) {
+        const ranks = cards.map(card => getCardRankValue(card));
+        const highestRank = Math.max(...ranks);
+        return rankToCard(highestRank);
+    }
+
+    function getCardRankValue(card) {
+        const rank = card.slice(0, -1);
+        const rankValues = {
+            "A": 14, "K": 13, "Q": 12, "J": 11,
+            "10": 10, "9": 9, "8": 8, "7": 7,
+            "6": 6, "5": 5, "4": 4, "3": 3, "2": 2
+        };
+        return rankValues[rank];
+    }
+
+    function rankToCard(rankValue) {
+        const rankToCard = {
+            14: "A", 13: "K", 12: "Q", 11: "J",
+            10: "10", 9: "9", 8: "8", 7: "7",
+            6: "6", 5: "5", 4: "4", 3: "3", 2: "2"
+        };
+        return rankToCard[rankValue];
+    }
+
+    function calculatePairProbability(cards) {
+        // Simple example: count pairs
+        const rankCount = {};
+        cards.forEach(card => {
+            const rank = card.slice(0, -1);
+            rankCount[rank] = (rankCount[rank] || 0) + 1;
+        });
+        const pairs = Object.values(rankCount).filter(count => count === 2).length;
+        return pairs > 0 ? 100 : 0; // Simple assumption: if any pair, probability is 100%
+    }
+
+    function calculateTwoPairProbability(cards) {
+        const rankCount = {};
+        cards.forEach(card => {
+            const rank = card.slice(0, -1);
+            rankCount[rank] = (rankCount[rank] || 0) + 1;
+        });
+        const pairs = Object.values(rankCount).filter(count => count === 2).length;
+        return pairs >= 2 ? 100 : 0; // Simple assumption: if two or more pairs, probability is 100%
+    }
+
+    function calculateThreeOfAKindProbability(cards) {
+        const rankCount = {};
+        cards.forEach(card => {
+            const rank = card.slice(0, -1);
+            rankCount[rank] = (rankCount[rank] || 0) + 1;
+        });
+        const threeOfAKind = Object.values(rankCount).includes(3);
+        return threeOfAKind ? 100 : 0; // Simple assumption: if three of a kind, probability is 100%
+    }
+
+    function calculateStraightProbability(cards) {
+        // Check for a straight
+        const ranks = Array.from(new Set(cards.map(card => getCardRankValue(card)))).sort((a, b) => a - b);
+        const isStraight = ranks.length >= 5 && (ranks.slice(-5).every((val, i, arr) => i === 0 || val === arr[i - 1] + 1));
+        return isStraight ? 100 : 0; // Simple assumption: if straight, probability is 100%
+    }
+
+    function calculateFlushProbability(cards) {
+        // Check for a flush
+        const suitCount = {};
+        cards.forEach(card => {
+            const suit = card.slice(-1);
+            suitCount[suit] = (suitCount[suit] || 0) + 1;
+        });
+        const flush = Object.values(suitCount).some(count => count >= 5);
+        return flush ? 100 : 0; // Simple assumption: if flush, probability is 100%
+    }
+
+    function calculateFullHouseProbability(cards) {
+        // Check for a full house
+        const rankCount = {};
+        cards.forEach(card => {
+            const rank = card.slice(0, -1);
+            rankCount[rank] = (rankCount[rank] || 0) + 1;
+        });
+        const counts = Object.values(rankCount);
+        const threeOfAKind = counts.includes(3);
+        const pair = counts.includes(2);
+        return threeOfAKind && pair ? 100 : 0; // Simple assumption: if full house, probability is 100%
+    }
+
+    function calculateFourOfAKindProbability(cards) {
+        // Check for four of a kind
+        const rankCount = {};
+        cards.forEach(card => {
+            const rank = card.slice(0, -1);
+            rankCount[rank] = (rankCount[rank] || 0) + 1;
+        });
+        const fourOfAKind = Object.values(rankCount).includes(4);
+        return fourOfAKind ? 100 : 0; // Simple assumption: if four of a kind, probability is 100%
+    }
+
+    function calculateStraightFlushProbability(cards) {
+        // Check for a straight flush
+        const suits = Array.from(new Set(cards.map(card => card.slice(-1))));
+        let isStraightFlush = false;
+        suits.forEach(suit => {
+            const suitCards = cards.filter(card => card.endsWith(suit));
+            const ranks = Array.from(new Set(suitCards.map(card => getCardRankValue(card)))).sort((a, b) => a - b);
+            if (ranks.length >= 5 && ranks.slice(-5).every((val, i, arr) => i === 0 || val === arr[i - 1] + 1)) {
+                isStraightFlush = true;
+            }
+        });
+        return isStraightFlush ? 100 : 0; // Simple assumption: if straight flush, probability is 100%
+    }
+
+    function calculateRoyalFlushProbability(cards) {
+        // Check for a royal flush
+        const suits = Array.from(new Set(cards.map(card => card.slice(-1))));
+        let isRoyalFlush = false;
+        suits.forEach(suit => {
+            const suitCards = cards.filter(card => card.endsWith(suit));
+            const ranks = Array.from(new Set(suitCards.map(card => getCardRankValue(card)))).sort((a, b) => a - b);
+            const isRoyal = ranks.includes(10) && ranks.includes(11) && ranks.includes(12) && ranks.includes(13) && ranks.includes(14);
+            if (isRoyal) {
+                isRoyalFlush = true;
+            }
+        });
+        return isRoyalFlush ? 100 : 0; // Simple assumption: if royal flush, probability is 100%
+    }
+
+    function populateProbabilityTable(probabilities) {
+        const tableBody = document.getElementById('poker-probability-table').querySelector('tbody');
+        tableBody.innerHTML = ''; // Clear existing rows
+
+        for (const [hand, data] of Object.entries(probabilities)) {
+            const row = document.createElement('tr');
+
+            const handCell = document.createElement('td');
+            handCell.textContent = hand;
+            row.appendChild(handCell);
+
+            const probabilityCell = document.createElement('td');
+            probabilityCell.textContent = data.probability.toFixed(2);
+            row.appendChild(probabilityCell);
+
+            const highCardCell = document.createElement('td');
+            highCardCell.textContent = data.highCard || 'N/A';
+            row.appendChild(highCardCell);
+
+            tableBody.appendChild(row);
+        }
+    }
+});
+
+    </script>
+</body>
+</html>

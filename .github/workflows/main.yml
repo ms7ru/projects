@@ -1,0 +1,82 @@
+name: Generate Sitemap
+on:
+  push:
+    branches:
+      - main  # or your default branch name
+jobs:
+  generate-sitemap:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Create sitemap generation script
+        run: |
+          cat > generate-sitemap.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          function getAllFiles(dirPath, arrayOfFiles) {
+            const files = fs.readdirSync(dirPath);
+            
+            arrayOfFiles = arrayOfFiles || [];
+            
+            files.forEach(file => {
+              if (fs.statSync(dirPath + "/" + file).isDirectory()) {
+                arrayOfFiles = getAllFiles(dirPath + "/" + file, arrayOfFiles);
+              } else {
+                arrayOfFiles.push(path.join(dirPath, file));
+              }
+            });
+            
+            return arrayOfFiles;
+          }
+          
+          // Get all files and filter for .html
+          const allFiles = getAllFiles('.');
+          const htmlFiles = allFiles.filter(file => 
+            file.endsWith('.html') && 
+            !file.includes('node_modules') &&
+            !file.startsWith('./.git/')
+          );
+          
+          // Convert paths to URLs
+          const repoName = process.env.GITHUB_REPOSITORY.split('/')[1];
+          const baseUrl = `https://${repoName}`;
+          const urls = htmlFiles.map(file => {
+            // Remove leading './' and convert path separators
+            const urlPath = file.replace(/^\.\//, '').replace(/\\/g, '/');
+            return `${baseUrl}/${urlPath}`;
+          });
+          
+          // Generate sitemap XML
+          const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            ${urls.map(url => `
+              <url>
+                <loc>${url}</loc>
+                <lastmod>${new Date().toISOString()}</lastmod>
+              </url>
+            `).join('')}
+          </urlset>`;
+          
+          fs.writeFileSync('sitemap.xml', sitemap);
+          EOF
+      - name: Generate sitemap
+        run: node generate-sitemap.js
+        
+      - name: Commit and push sitemap
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "[BOT]-SiteMap-Updator"
+          git add sitemap.xml
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update sitemap.xml"
+          git push https://${{ secrets.SITEMAP_TOKEN }}@github.com/${{ github.repository }}.git
+        env:
+          SITEMAP_TOKEN: ${{ secrets.SITEMAP_TOKEN }}
