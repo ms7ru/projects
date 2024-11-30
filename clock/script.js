@@ -1,8 +1,10 @@
+let lastTime = null;
+
 async function updateTime() {
     try {
-        // Fetch time for Delhi
-        const response = await fetch('https://api.api-ninjas.com/v1/worldtime?city=Delhi', {
-            headers: { 'X-Api-Key': '2eEzI79cHATEpMoUB9xKwKW76R7DSPowWDAHC34l' } // Your API Key
+        // Fetch time for Asia/Kolkata timezone
+        const response = await fetch('https://api.api-ninjas.com/v1/worldtime?timezone=Asia/Kolkata', {
+            headers: { 'X-Api-Key': '2eEzI79cHATEpMoUB9xKwKW76R7DSPowWDAHC34l' }
         });
 
         if (!response.ok) {
@@ -15,16 +17,16 @@ async function updateTime() {
         console.log('API Response:', data); // Debugging: Check API response structure
 
         // Parse the datetime from the API response
-        lastTime = new Date(data.datetime);
+        const [datePart, timePart] = data.datetime.split(" ");
+        lastTime = new Date(`${datePart}T${timePart}+05:30`);
 
         // Update the date and clock immediately
-        updateDate();
+        updateDate(data);
         displayTime();
 
         // Start a local clock that updates every second
         setInterval(() => {
             lastTime.setSeconds(lastTime.getSeconds() + 1);
-            updateDate();
             displayTime();
         }, 1000);
     } catch (error) {
@@ -32,15 +34,14 @@ async function updateTime() {
     }
 }
 
-function updateDate() {
-    if (lastTime) {
-        const year = lastTime.getFullYear();
-        const month = lastTime.toLocaleString('default', { month: 'short' });
-        const day = lastTime.getDate();
+function updateDate(data) {
+    const { year, month, day, day_of_week } = data;
 
-        const dateString = `${day.toString().padStart(2, '0')}/${month}/${year}`;
-        document.getElementById('date').textContent = dateString;
-    }
+    // Format the date
+    const dateString = `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    const dayName = day_of_week;
+
+    document.getElementById('date').textContent = `${dateString} (${dayName})`;
 }
 
 function displayTime() {
