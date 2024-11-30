@@ -32,7 +32,7 @@
             try {
                 // Fetch time data from the API
                 const response = await fetch('https://api.api-ninjas.com/v1/worldtime?city=UTC', {
-                    headers: { 'X-Api-Key': 'IqFWXtMcrzehyfH0YxCYjg==VBFfbPmaACUddPII' }
+                    headers: { 'X-Api-Key': '2eEzI79cHATEpMoUB9xKwKW76R7DSPowWDAHC34l' }
                 });
 
                 if (!response.ok) throw new Error('Failed to fetch time data');
